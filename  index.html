@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IP Tester</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Vazirmatn:wght@300;400;600;700&display=swap');
+
+  :root {
+    --bg: #0a0e17;
+    --surface: #111827;
+    --border: #1e2d45;
+    --accent: #00d4ff;
+    --accent2: #00ff88;
+    --danger: #ff4444;
+    --warn: #ffaa00;
+    --text: #e2e8f0;
+    --muted: #4a5568;
+    --card: #0f1923;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Vazirmatn', sans-serif;
+    min-height: 100vh;
+    padding: 16px;
+    background-image:
+      radial-gradient(ellipse at 20% 0%, rgba(0,212,255,0.05) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 100%, rgba(0,255,136,0.04) 0%, transparent 60%);
+  }
+
+  h1 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.1rem;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.75rem;
+    margin-bottom: 20px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    background: var(--surface);
+    border-radius: 10px;
+    padding: 4px;
+    border: 1px solid var(--border);
+  }
+
+  .tab {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--muted);
+    font-family: 'Vazirmatn', sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .tab.active {
+    background: var(--accent);
+    color: #000;
+    font-weight: 700;
+  }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  textarea {
+    width: 100%;
+    height: 140px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    padding: 12px;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s;
+    direction: ltr;
+  }
+
+  textarea:focus { border-color: var(--accent); }
+
+  .file-drop {
+    border: 1.5px dashed var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.8rem;
+    margin-top: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .file-drop:hover, .file-drop.drag { border-color: var(--accent); color: var(--accent); }
+
+  .file-drop input { display: none; }
+
+  .settings {
+    display: flex;
+    gap: 10px;
+    margin: 14px 0;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .settings label {
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  .settings select, .settings input[type=number] {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    font-family: 'Vazirmatn', sans-serif;
+    outline: none;
+    width: 80px;
+  }
+
+  .btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Vazirmatn', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 1px;
+  }
+
+  .btn-start {
+    background: linear-gradient(135deg, var(--accent), #0099cc);
+    color: #000;
+    margin-bottom: 10px;
+  }
+
+  .btn-start:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-start:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .btn-export {
+    background: linear-gradient(135deg, var(--accent2), #00aa55);
+    color: #000;
+    display: none;
+  }
+
+  .btn-export.show { display: block; }
+
+  .btn-ircf {
+    width: 100%;
+    padding: 11px;
+    border: 1.5px solid var(--accent);
+    border-radius: 10px;
+    background: rgba(0,212,255,0.07);
+    color: var(--accent);
+    font-family: 'Vazirmatn', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+  .btn-ircf:hover { background: rgba(0,212,255,0.15); }
+  .btn-ircf:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .progress-wrap {
+    background: var(--surface);
+    border-radius: 8px;
+    height: 6px;
+    margin: 12px 0 6px;
+    overflow: hidden;
+    display: none;
+  }
+
+  .progress-wrap.show { display: block; }
+
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    width: 0%;
+    transition: width 0.3s;
+  }
+
+  .stats {
+    display: flex;
+    gap: 10px;
+    margin: 10px 0;
+    display: none;
+  }
+
+  .stats.show { display: flex; }
+
+  .stat {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 8px;
+    text-align: center;
+  }
+
+  .stat-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.3rem;
+    font-weight: 600;
+    display: block;
+  }
+
+  .stat-num.green { color: var(--accent2); }
+  .stat-num.red { color: var(--danger); }
+  .stat-num.blue { color: var(--accent); }
+
+  .stat-lbl { font-size: 0.65rem; color: var(--muted); display: block; margin-top: 2px; }
+
+  .results {
+    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 340px;
+    overflow-y: auto;
+  }
+
+  .result-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: slideIn 0.2s ease;
+    direction: ltr;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-item.ok { border-color: rgba(0,255,136,0.3); }
+  .result-item.fail { border-color: rgba(255,68,68,0.15); opacity: 0.5; }
+  .result-item.testing { border-color: rgba(0,212,255,0.3); }
+
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .dot.ok { background: var(--accent2); box-shadow: 0 0 6px var(--accent2); }
+  .dot.fail { background: var(--danger); }
+  .dot.testing {
+    background: var(--accent);
+    animation: pulse 0.8s infinite;
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity: 1; } 50% { opacity: 0.3; }
+  }
+
+  .result-ip {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    flex: 1;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .result-time {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .result-time.fail { color: var(--danger); }
+
+  .counter-text {
+    text-align: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .base-cfg-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 14px;
+  }
+  .base-cfg-label {
+    font-size: 0.75rem;
+    color: var(--accent);
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+
+  .gen-box {
+    background: var(--card);
+    border: 1.5px solid rgba(0,212,255,0.25);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-top: 10px;
+    display: none;
+  }
+  .gen-box.show { display: block; }
+  .gen-title {
+    font-size: 0.8rem;
+    color: var(--accent);
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .gen-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .gen-row label { font-size: 0.78rem; color: var(--muted); }
+  .btn-gen {
+    flex: 1;
+    padding: 9px 14px;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #ff9944, #ff5500);
+    color: #fff;
+    font-family: 'Vazirmatn', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .btn-gen:hover { opacity: 0.88; }
+  .gen-note {
+    font-size: 0.72rem;
+    color: var(--accent2);
+    margin-top: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+</style>
+</head>
+<body>
+
+<h1>// IP TESTER</h1>
+<div class="subtitle">HTTP reachability test · vless configs</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('ip')">📋 لیست IP</button>
+  <button class="tab" onclick="switchTab('config')">⚙️ کانفیگ vless</button>
+</div>
+
+<!-- IP Panel -->
+<div class="panel active" id="panel-ip">
+  <textarea id="ip-text" placeholder="هر IP رو در یک خط بنویس:&#10;104.21.72.109&#10;69.84.182.49&#10;..."></textarea>
+  <div class="file-drop" id="ip-drop" onclick="document.getElementById('ip-file').click()">
+    📁 یا فایل txt رو اینجا بکش / کلیک کن
+    <input type="file" id="ip-file" accept=".txt" onchange="loadFile(this,'ip')">
+  </div>
+  <button class="btn btn-ircf" id="ircfBtn" onclick="loadIRCF()">
+    <span id="ircf-btn-text">☁️ بارگذاری لیست IRCF (Cloudflare IPs)</span>
+  </button>
+</div>
+
+<!-- Config Panel -->
+<div class="panel" id="panel-config">
+  <textarea id="cfg-text" placeholder="کانفیگ vless رو اینجا paste کن:&#10;vless://...@104.21.72.109:443?...&#10;vless://...@69.84.182.49:443?..."></textarea>
+  <div class="file-drop" id="cfg-drop" onclick="document.getElementById('cfg-file').click()">
+    📁 یا فایل txt کانفیگ رو اینجا بکش / کلیک کن
+    <input type="file" id="cfg-file" accept=".txt" onchange="loadFile(this,'cfg')">
+  </div>
+</div>
+
+<!-- Base Config Section -->
+<div class="base-cfg-box" id="baseCfgBox">
+  <div class="base-cfg-label">⚙️ کانفیگ پایه (اختیاری — برای ساخت کانفیگ‌های جدید)</div>
+  <textarea id="base-cfg" style="height:70px;font-size:0.65rem" placeholder="vless://...@1.2.3.4:443?...#name&#10;فقط یک کانفیگ — IP اون جایگزین میشه"></textarea>
+</div>
+
+<div class="settings">
+  <label>تایم‌اوت:</label>
+  <select id="timeout">
+    <option value="3000">3 ثانیه</option>
+    <option value="5000" selected>5 ثانیه</option>
+    <option value="8000">8 ثانیه</option>
+    <option value="10000">10 ثانیه</option>
+  </select>
+  <label>همزمان:</label>
+  <input type="number" id="concurrency" value="5" min="1" max="20">
+  <label>حداکثر ms:</label>
+  <input type="number" id="maxms" value="120" min="10" max="9999" style="width:70px">
+</div>
+
+<button class="btn btn-start" id="startBtn" onclick="startTest()">▶ شروع تست</button>
+<button class="btn btn-export" id="exportBtn" onclick="exportResults()">💾 دانلود نتایج (فقط آنلاین‌ها)</button>
+
+<!-- Generate Configs Panel -->
+<div class="gen-box" id="genBox">
+  <div class="gen-title">🔧 ساخت کانفیگ از IP های پیدا شده</div>
+  <div class="gen-row">
+    <label>تعداد:</label>
+    <input type="number" id="genCount" value="10" min="1" max="500" style="width:65px">
+    <button class="btn-gen" onclick="generateConfigs()">⚡ بساز و دانلود</button>
+  </div>
+  <div class="gen-note" id="genNote"></div>
+</div>
+
+<div class="progress-wrap" id="progressWrap">
+  <div class="progress-bar" id="progressBar"></div>
+</div>
+<div class="counter-text" id="counterText"></div>
+
+<div class="stats" id="statsBox">
+  <div class="stat"><span class="stat-num blue" id="s-total">0</span><span class="stat-lbl">کل</span></div>
+  <div class="stat"><span class="stat-num green" id="s-ok">0</span><span class="stat-lbl">آنلاین</span></div>
+  <div class="stat"><span class="stat-num red" id="s-fail">0</span><span class="stat-lbl">آفلاین</span></div>
+  <div class="stat"><span class="stat-num blue" id="s-avg">-</span><span class="stat-lbl">میانگین ms</span></div>
+</div>
+
+<div class="results" id="results"></div>
+
+<script>
+let currentTab = 'ip';
+let okItems = []; // {label, ip, ms}
+let isRunning = false;
+
+function switchTab(t) {
+  currentTab = t;
+  document.querySelectorAll('.tab').forEach((b,i) => b.classList.toggle('active', (i===0&&t==='ip')||(i===1&&t==='config')));
+  document.getElementById('panel-ip').classList.toggle('active', t==='ip');
+  document.getElementById('panel-config').classList.toggle('active', t==='config');
+}
+
+function loadFile(input, type) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const ta = type === 'ip' ? 'ip-text' : 'cfg-text';
+    document.getElementById(ta).value = e.target.result;
+  };
+  reader.readAsText(file);
+}
+
+// drag & drop
+['ip-drop','cfg-drop'].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('drag'); });
+  el.addEventListener('dragleave', () => el.classList.remove('drag'));
+  el.addEventListener('drop', e => {
+    e.preventDefault(); el.classList.remove('drag');
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const ta = id === 'ip-drop' ? 'ip-text' : 'cfg-text';
+      document.getElementById(ta).value = ev.target.result;
+    };
+    reader.readAsText(file);
+  });
+});
+
+function parseEntries() {
+  let raw = '';
+  let entries = []; // {label, ip, port}
+
+  if (currentTab === 'ip') {
+    raw = document.getElementById('ip-text').value;
+    raw.split('\n').forEach(line => {
+      line = line.trim();
+      if (!line) return;
+      // could be ip or ip:port
+      const m = line.match(/^([\d.]+)(?::(\d+))?$/);
+      if (m) entries.push({ label: line, ip: m[1], port: m[2] || '443' });
+    });
+  } else {
+    raw = document.getElementById('cfg-text').value;
+    raw.split('\n').forEach(line => {
+      line = line.trim();
+      if (!line) return;
+      // extract ip:port after @
+      const m = line.match(/@([\d.]+):(\d+)/);
+      if (m) entries.push({ label: line, ip: m[1], port: m[2] });
+      else {
+        // maybe plain ip
+        const m2 = line.match(/^([\d.]+)(?::(\d+))?$/);
+        if (m2) entries.push({ label: line, ip: m2[1], port: m2[2] || '443' });
+      }
+    });
+  }
+  return entries;
+}
+
+async function probeOne(entry, timeout) {
+  const url = `https://${entry.ip}:${entry.port}/`;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+  const t0 = performance.now();
+  try {
+    await fetch(url, {
+      method: 'HEAD',
+      mode: 'no-cors',
+      signal: controller.signal,
+      cache: 'no-store'
+    });
+    clearTimeout(timer);
+    return { ok: true, ms: Math.round(performance.now() - t0) };
+  } catch(e) {
+    clearTimeout(timer);
+    const ms = Math.round(performance.now() - t0);
+    // If aborted = timeout = fail. Otherwise network error could still mean server exists
+    if (e.name === 'AbortError') return { ok: false, ms };
+    // connection refused or other network error — server responded (even with error) = reachable
+    // In no-cors mode, opaque response = ok. Error = unreachable or blocked.
+    return { ok: false, ms };
+  }
+}
+
+// A better probe: image trick for HTTPS hosts
+async function probeHTTPS(entry, timeout) {
+  return new Promise(resolve => {
+    const t0 = performance.now();
+    const img = new Image();
+    const timer = setTimeout(() => {
+      img.src = '';
+      resolve({ ok: false, ms: timeout });
+    }, timeout);
+
+    img.onload = img.onerror = function(e) {
+      clearTimeout(timer);
+      const ms = Math.round(performance.now() - t0);
+      // onerror can mean: connected but not an image (server alive) OR no connection
+      // We distinguish by timing: if ms < timeout*0.9 => server responded
+      const responded = ms < timeout * 0.92;
+      resolve({ ok: responded, ms });
+    };
+    img.src = `https://${entry.ip}:${entry.port}/favicon.ico?_=${Date.now()}`;
+  });
+}
+
+async function runPool(entries, concurrency, timeout, onDone) {
+  let idx = 0;
+  let active = 0;
+  let finished = 0;
+  const total = entries.length;
+
+  return new Promise(resolve => {
+    function next() {
+      while (active < concurrency && idx < total) {
+        const entry = entries[idx++];
+        active++;
+        probeHTTPS(entry, timeout).then(res => {
+          active--;
+          finished++;
+          onDone(entry, res, finished, total);
+          next();
+          if (finished === total) resolve();
+        });
+      }
+    }
+    next();
+  });
+}
+
+async function startTest() {
+  if (isRunning) return;
+  const entries = parseEntries();
+  if (!entries.length) { alert('هیچ IP یا کانفیگی پیدا نشد!'); return; }
+
+  isRunning = true;
+  okItems = [];
+  document.getElementById('results').innerHTML = '';
+  document.getElementById('startBtn').disabled = true;
+  document.getElementById('exportBtn').classList.remove('show');
+  document.getElementById('progressWrap').classList.add('show');
+  document.getElementById('statsBox').classList.add('show');
+  document.getElementById('s-total').textContent = entries.length;
+  document.getElementById('s-ok').textContent = '0';
+  document.getElementById('s-fail').textContent = '0';
+  document.getElementById('s-avg').textContent = '-';
+
+  const timeout = parseInt(document.getElementById('timeout').value);
+  const concurrency = parseInt(document.getElementById('concurrency').value);
+
+  // pre-render testing items
+  const resultsEl = document.getElementById('results');
+  const itemEls = {};
+  entries.forEach(e => {
+    const div = document.createElement('div');
+    div.className = 'result-item testing';
+    div.id = 'ri-' + e.ip + e.port;
+    div.innerHTML = `<span class="dot testing"></span><span class="result-ip">${e.ip}:${e.port}</span><span class="result-time">...</span>`;
+    resultsEl.appendChild(div);
+    itemEls[e.ip + e.port] = div;
+  });
+
+  let okCount = 0, failCount = 0, totalMs = 0;
+  const maxMs = parseInt(document.getElementById('maxms').value) || 120;
+
+  await runPool(entries, concurrency, timeout, (entry, res, done, total) => {
+    const key = entry.ip + entry.port;
+    const div = itemEls[key];
+    if (res.ok && res.ms <= maxMs) {
+      okCount++;
+      totalMs += res.ms;
+      okItems.push({ label: entry.label, ip: entry.ip, port: entry.port, ms: res.ms });
+
+      // color by speed: green <50, yellow 50-100, orange 100-maxMs
+      const color = res.ms < 50 ? '#00ff88' : res.ms < 100 ? '#ffe066' : '#ff9944';
+      div.className = 'result-item ok';
+      div.innerHTML = `<span class="dot ok" style="background:${color};box-shadow:0 0 6px ${color}"></span><span class="result-ip">${entry.ip}:${entry.port}</span><span class="result-time" style="color:${color}">${res.ms}ms</span>`;
+
+      // insert sorted by ms ascending
+      const allOk = resultsEl.querySelectorAll('.result-item.ok');
+      let inserted = false;
+      for (const el of allOk) {
+        const elMs = parseInt(el.querySelector('.result-time').textContent);
+        if (res.ms < elMs) {
+          resultsEl.insertBefore(div, el);
+          inserted = true;
+          break;
+        }
+      }
+      if (!inserted) {
+        // after all ok items, before fail items
+        const firstFail = resultsEl.querySelector('.result-item.fail, .result-item.testing');
+        if (firstFail) resultsEl.insertBefore(div, firstFail);
+        else resultsEl.appendChild(div);
+      }
+    } else {
+      failCount++;
+      div.className = 'result-item fail';
+      const label = res.ok ? `${res.ms}ms (بالای ${maxMs})` : 'timeout';
+      div.innerHTML = `<span class="dot fail"></span><span class="result-ip">${entry.ip}:${entry.port}</span><span class="result-time fail">${label}</span>`;
+    }
+    // stats
+    document.getElementById('s-ok').textContent = okCount;
+    document.getElementById('s-fail').textContent = failCount;
+    document.getElementById('s-avg').textContent = okCount ? Math.round(totalMs/okCount) : '-';
+    // progress
+    const pct = (done/total*100).toFixed(1);
+    document.getElementById('progressBar').style.width = pct + '%';
+    document.getElementById('counterText').textContent = `${done} / ${total} — ${pct}%`;
+  });
+
+  isRunning = false;
+  document.getElementById('startBtn').disabled = false;
+  if (okItems.length) {
+    document.getElementById('exportBtn').classList.add('show');
+    document.getElementById('genNote').textContent = `${okItems.length} آی‌پی پیدا شد — تعداد مورد نظر رو انتخاب کن`;
+    document.getElementById('genBox').classList.add('show');
+  }
+}
+
+async function loadIRCF() {
+  const btn = document.getElementById('ircfBtn');
+  const btnText = document.getElementById('ircf-btn-text');
+  btn.disabled = true;
+  btnText.textContent = '⏳ در حال دریافت لیست...';
+
+  const URLS = [
+    'https://raw.githubusercontent.com/ircfspace/cf-ip-ranges/main/export.ipv4',
+    'https://cdn.jsdelivr.net/gh/ircfspace/cf-ip-ranges@main/export.ipv4',
+    'https://rawcdn.githack.com/ircfspace/cf-ip-ranges/main/export.ipv4',
+  ];
+
+  let text = null;
+  for (const url of URLS) {
+    try {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (res.ok) { text = await res.text(); break; }
+    } catch(e) { /* try next */ }
+  }
+
+  if (!text) {
+    btnText.textContent = '❌ خطا — فایل ip-list.txt رو آپلود کن';
+    btn.style.borderColor = 'var(--danger)';
+    btn.style.color = 'var(--danger)';
+    setTimeout(() => {
+      btnText.textContent = '☁️ بارگذاری لیست IRCF (Cloudflare IPs)';
+      btn.style.borderColor = ''; btn.style.color = '';
+      btn.disabled = false;
+    }, 4000);
+    return;
+  }
+
+  const lines = text.trim().split('\n');
+  const ips = [];
+  lines.forEach(line => {
+    line = line.trim();
+    if (!line) return;
+    const m = line.match(/^(\d+\.\d+\.\d+)\.\d+\/\d+$/);
+    if (m) ips.push(m[1] + '.1');
+    else if (/^\d+\.\d+\.\d+\.\d+$/.test(line)) ips.push(line);
+  });
+
+  document.getElementById('ip-text').value = ips.join('\n');
+  btnText.textContent = `✅ ${ips.length} آی‌پی بارگذاری شد`;
+  btn.style.borderColor = 'var(--accent2)';
+  btn.style.color = 'var(--accent2)';
+  btn.style.background = 'rgba(0,255,136,0.07)';
+  setTimeout(() => {
+    btnText.textContent = '☁️ بارگذاری لیست IRCF (Cloudflare IPs)';
+    btn.style.borderColor = ''; btn.style.color = ''; btn.style.background = '';
+    btn.disabled = false;
+  }, 3000);
+}
+
+function exportResults() {
+  const sorted = [...okItems].sort((a,b) => a.ms - b.ms);
+  let lines = [];
+  if (currentTab === 'config') {
+    sorted.forEach(item => lines.push(`${item.ms}ms  ${item.label}`));
+  } else {
+    sorted.forEach(item => lines.push(`${item.ip}:${item.port}  ${item.ms}ms`));
+  }
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = currentTab === 'config' ? 'working-configs.txt' : 'online-ips.txt';
+  a.click();
+function generateConfigs() {
+  const baseCfg = document.getElementById('base-cfg').value.trim();
+  if (!baseCfg) {
+    document.getElementById('genNote').textContent = '❌ ابتدا کانفیگ پایه رو وارد کن!';
+    document.getElementById('genNote').style.color = 'var(--danger)';
+    return;
+  }
+  if (!okItems.length) {
+    document.getElementById('genNote').textContent = '❌ هنوز تستی انجام نشده!';
+    document.getElementById('genNote').style.color = 'var(--danger)';
+    return;
+  }
+
+  // parse base config to extract IP and port
+  const ipPortMatch = baseCfg.match(/@([\d.]+):(\d+)/);
+  if (!ipPortMatch) {
+    document.getElementById('genNote').textContent = '❌ فرمت کانفیگ درست نیست — باید @IP:PORT داشته باشه';
+    document.getElementById('genNote').style.color = 'var(--danger)';
+    return;
+  }
+
+  const count = Math.min(parseInt(document.getElementById('genCount').value) || 10, okItems.length);
+  const sorted = [...okItems].sort((a, b) => a.ms - b.ms);
+  const selected = sorted.slice(0, count);
+
+  const oldIP = ipPortMatch[1];
+  const oldPort = ipPortMatch[2];
+
+  // extract base name tag (after #)
+  const nameMatch = baseCfg.match(/#(.+)$/);
+  const baseName = nameMatch ? decodeURIComponent(nameMatch[1]) : 'cf';
+
+  const lines = selected.map((item, i) => {
+    // replace IP and port in config
+    let cfg = baseCfg.replace(`@${oldIP}:${oldPort}`, `@${item.ip}:${item.port}`);
+    // update name tag with ms
+    const newName = encodeURIComponent(`${baseName}-${i+1}-${item.ms}ms`);
+    cfg = cfg.replace(/#.+$/, '#' + newName);
+    return cfg;
+  });
+
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'generated-configs.txt';
+  a.click();
+
+  document.getElementById('genNote').style.color = 'var(--accent2)';
+  document.getElementById('genNote').textContent = `✅ ${count} کانفیگ ساخته و دانلود شد (مرتب بر اساس سرعت)`;
+}
+</script>
+</body>
+</html>
